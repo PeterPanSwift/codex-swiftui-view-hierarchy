@@ -49,7 +49,6 @@ button { color: inherit; }
   pointer-events: none;
 }
 
-.ambient-one { top: -290px; right: -120px; background: var(--accent-ambient); }
 .ambient-two { top: 440px; left: -340px; background: var(--accent-ambient-soft); }
 
 .topbar {
@@ -180,6 +179,28 @@ main { width: min(1420px, 92vw); margin: 0 auto; padding: 74px 0 54px; }
 .node-row { position: relative; display: flex; align-items: center; min-height: 46px; }
 .tree li > .node-row::before { content: ""; position: absolute; z-index: 2; top: 17px; left: -23px; width: 0; height: 0; border-top: 6px solid transparent; border-bottom: 6px solid transparent; border-left: 11px solid var(--tree-line); }
 .tree > li > .node-row::before { display: none; }
+.tree-stage.tree-entering .tree li::before,
+.children-branch.is-expanding li::before { transform-origin: top; animation: connector-grow-vertical .3s cubic-bezier(.2, .8, .2, 1) both; }
+.tree-stage.tree-entering .tree li::after,
+.children-branch.is-expanding li::after { transform-origin: left center; animation: connector-grow-horizontal .32s .1s cubic-bezier(.2, .8, .2, 1) both; }
+.tree-stage.tree-entering .tree li > .node-row::before,
+.children-branch.is-expanding li > .node-row::before { transform-origin: center; animation: connector-arrow-pop .18s .36s cubic-bezier(.2, .9, .3, 1.25) both; }
+
+@keyframes connector-grow-vertical {
+  from { opacity: 0; transform: scaleY(0); }
+  to { opacity: 1; transform: scaleY(1); }
+}
+
+@keyframes connector-grow-horizontal {
+  from { opacity: 0; transform: scaleX(0); }
+  to { opacity: 1; transform: scaleX(1); }
+}
+
+@keyframes connector-arrow-pop {
+  from { opacity: 0; transform: translateX(-8px) scale(.35); }
+  to { opacity: 1; transform: translateX(0) scale(1); }
+}
+
 .view-node { position: relative; display: flex; align-items: center; gap: 10px; min-width: 166px; min-height: 46px; padding: 9px 14px; color: #35405f; border: 1px solid #dde0e9; border-radius: 11px; background: white; box-shadow: 0 7px 18px rgba(32, 38, 69, .08); cursor: default; transition: transform .18s, border-color .18s, box-shadow .18s; }
 .view-node.has-children { color: white; border-color: transparent; background: linear-gradient(135deg, var(--tree-highlight) 0%, var(--tree-color) 52%, var(--tree-deep) 100%); box-shadow: 0 9px 20px var(--tree-shadow); cursor: pointer; }
 .view-node.type-node { background: linear-gradient(135deg, var(--tree-dark) 0%, var(--tree-color) 58%, var(--tree-deep) 100%); box-shadow: 0 9px 22px var(--tree-shadow); }
@@ -240,5 +261,5 @@ main { width: min(1420px, 92vw); margin: 0 auto; padding: 74px 0 54px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; }
+  *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; animation: none !important; }
 }

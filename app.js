@@ -354,6 +354,10 @@ function renderTree() {
   treeStage.classList.toggle("names-only", nameOnlyToggle.checked);
   emptyState.hidden = nodes.length > 0;
   treeStage.innerHTML = nodes.length ? `<ul class="tree">${nodes.map(renderNode).join("")}</ul>` : "";
+  treeStage.classList.remove("tree-entering");
+  void treeStage.offsetWidth;
+  treeStage.classList.add("tree-entering");
+  window.setTimeout(() => treeStage.classList.remove("tree-entering"), 620);
   nodeCount.textContent = currentLanguage === "en" ? `${stats.count} ${stats.count === 1 ? "View" : "Views"}` : `${stats.count} 個 View`;
   depthCount.textContent = currentLanguage === "en" ? `${stats.maxDepth} ${stats.maxDepth === 1 ? "Level" : "Levels"}` : `${stats.maxDepth} 層`;
   setZoom(1);
@@ -392,6 +396,12 @@ treeStage.addEventListener("click", (event) => {
   const childrenBranch = item.querySelector(":scope > .children-branch");
   childrenBranch.inert = collapsed;
   childrenBranch.setAttribute("aria-hidden", String(collapsed));
+  if (!collapsed) {
+    childrenBranch.classList.remove("is-expanding");
+    void childrenBranch.offsetWidth;
+    childrenBranch.classList.add("is-expanding");
+    window.setTimeout(() => childrenBranch.classList.remove("is-expanding"), 620);
+  }
   button.setAttribute("aria-expanded", String(!collapsed));
   button.setAttribute("aria-label", `${translate(collapsed ? "expand" : "collapse")} ${button.querySelector(".node-name").textContent}`);
   button.querySelector(".toggle").textContent = collapsed ? "+" : "−";
