@@ -12,6 +12,75 @@ const EXAMPLE_CODE = `HStack {
     Spacer()
 }`;
 
+const TRANSLATIONS = {
+  "zh-Hant": {
+    headerCopy: "SwiftUI 結構視覺化工具",
+    home: "SwiftUI View Hierarchy 首頁",
+    generatorRegion: "SwiftUI 階層圖產生器",
+    languageControl: "語言",
+    heroTitle: "把程式碼，變成",
+    heroAccent: "看得懂的階層。",
+    heroDescription: "貼上 SwiftUI View 程式碼，即時生成可互動的視覺化結構。點擊節點即可展開或收合子 View。",
+    foxAlt: "可愛的北極狐抱著 Swift 標誌",
+    loadExample: "載入範例",
+    clearCode: "清除程式碼",
+    swiftCode: "SwiftUI 程式碼",
+    generate: "生成階層圖",
+    themeColor: "設定主題顏色",
+    themeColorLabel: "主題顏色",
+    namesOnly: "只顯示名稱",
+    diagramControls: "階層圖控制列",
+    zoomOut: "縮小",
+    zoomIn: "放大",
+    resetZoom: "重設縮放",
+    emptyTitle: "等待 SwiftUI 程式碼",
+    emptyDescription: "在左側貼上程式後，按下「生成階層圖」",
+    containerView: "容器 View",
+    leafNode: "葉節點",
+    hint: '<span>TIP</span> 點擊帶有 <b>−</b> 的節點，即可收合其所有子 View；開啟「只顯示名稱」可隱藏參數。',
+    viewType: "View 型別",
+    customView: "自訂 View",
+    collapse: "收合",
+    expand: "展開"
+  },
+  en: {
+    headerCopy: "SwiftUI structure visualizer",
+    home: "SwiftUI View Hierarchy home",
+    generatorRegion: "SwiftUI hierarchy generator",
+    languageControl: "Language",
+    heroTitle: "Turn code into",
+    heroAccent: "a visible hierarchy.",
+    heroDescription: "Paste SwiftUI View code to instantly generate an interactive structure. Click any container to expand or collapse its child Views.",
+    foxAlt: "A cute arctic fox hugging the Swift logo",
+    loadExample: "Load example",
+    clearCode: "Clear code",
+    swiftCode: "SwiftUI code",
+    generate: "Generate hierarchy",
+    themeColor: "Set theme color",
+    themeColorLabel: "Theme color",
+    namesOnly: "Names only",
+    diagramControls: "Hierarchy controls",
+    zoomOut: "Zoom out",
+    zoomIn: "Zoom in",
+    resetZoom: "Reset zoom",
+    emptyTitle: "Waiting for SwiftUI code",
+    emptyDescription: "Paste code on the left, then select “Generate hierarchy”",
+    containerView: "Container View",
+    leafNode: "Leaf node",
+    hint: '<span>TIP</span> Select a node with <b>−</b> to collapse its child Views; enable “Names only” to hide parameters.',
+    viewType: "View type",
+    customView: "Custom View",
+    collapse: "Collapse",
+    expand: "Expand"
+  }
+};
+
+let currentLanguage = "en";
+
+function translate(key) {
+  return TRANSLATIONS[currentLanguage][key] || key;
+}
+
 const codeInput = document.querySelector("#codeInput");
 const lineNumbers = document.querySelector("#lineNumbers");
 const lineCount = document.querySelector("#lineCount");
@@ -45,10 +114,12 @@ function applyTreeColor(color, persist = true) {
   root.style.setProperty("--shadow", `0 22px 65px rgba(${red}, ${green}, ${blue}, .12)`);
   root.style.setProperty("--tree-color", color);
   root.style.setProperty("--tree-light", mixHex(color, "#ffffff", .12));
+  root.style.setProperty("--tree-highlight", mixHex(color, "#ffffff", .24));
+  root.style.setProperty("--tree-deep", mixHex(color, "#000000", .2));
   root.style.setProperty("--tree-dark", mixHex(color, "#000000", .38));
   root.style.setProperty("--tree-component", mixHex(color, "#ffffff", .07));
   root.style.setProperty("--tree-shadow", `rgba(${red}, ${green}, ${blue}, .26)`);
-  root.style.setProperty("--tree-line", mixHex(color, "#ffffff", .72));
+  root.style.setProperty("--tree-line", mixHex(color, "#ffffff", .38));
   if (persist) {
     try { localStorage.setItem("swiftui-hierarchy-color", color); } catch { /* Storage may be unavailable. */ }
   }
@@ -251,11 +322,12 @@ function nodeIcon(node) {
 
 function renderNode(node) {
   const hasChildren = node.children.length > 0;
-  const detail = node.detail ? `<span class="node-detail">${escapeHTML(node.detail)}</span>` : "";
+  const detailText = node.kind === "type" ? translate("viewType") : node.kind === "component" ? translate("customView") : node.detail;
+  const detail = detailText ? `<span class="node-detail">${escapeHTML(detailText)}</span>` : "";
   const children = hasChildren ? `<ul>${node.children.map(renderNode).join("")}</ul>` : "";
   return `<li data-node-id="${node.id}">
     <div class="node-row">
-      <button class="view-node ${hasChildren ? "has-children" : ""} ${node.kind === "type" ? "type-node" : ""} ${node.kind === "component" ? "component-node" : ""}" type="button" ${hasChildren ? `aria-expanded="true" aria-label="收合 ${escapeHTML(node.name)}"` : "disabled"}>
+      <button class="view-node ${hasChildren ? "has-children" : ""} ${node.kind === "type" ? "type-node" : ""} ${node.kind === "component" ? "component-node" : ""}" type="button" ${hasChildren ? `aria-expanded="true" aria-label="${translate("collapse")} ${escapeHTML(node.name)}"` : "disabled"}>
         <span class="node-icon">${nodeIcon(node)}</span>
         <span class="node-text"><span class="node-name">${escapeHTML(node.name)}</span>${detail}</span>
         ${hasChildren ? '<span class="toggle">−</span>' : ""}
@@ -279,17 +351,18 @@ function treeStats(nodes) {
 function renderTree() {
   const nodes = parseSwiftUI(codeInput.value);
   const stats = treeStats(nodes);
+  treeStage.classList.toggle("names-only", nameOnlyToggle.checked);
   emptyState.hidden = nodes.length > 0;
   treeStage.innerHTML = nodes.length ? `<ul class="tree">${nodes.map(renderNode).join("")}</ul>` : "";
-  nodeCount.textContent = `${stats.count} ${stats.count === 1 ? "View" : "Views"}`;
-  depthCount.textContent = `${stats.maxDepth} ${stats.maxDepth === 1 ? "Level" : "Levels"}`;
+  nodeCount.textContent = currentLanguage === "en" ? `${stats.count} ${stats.count === 1 ? "View" : "Views"}` : `${stats.count} 個 View`;
+  depthCount.textContent = currentLanguage === "en" ? `${stats.maxDepth} ${stats.maxDepth === 1 ? "Level" : "Levels"}` : `${stats.maxDepth} 層`;
   setZoom(1);
 }
 
 function updateEditorMeta() {
   const count = codeInput.value.split("\n").length;
   lineNumbers.innerHTML = Array.from({ length: count }, (_, index) => index + 1).join("<br>");
-  lineCount.textContent = `${count} ${count === 1 ? "line" : "lines"}`;
+  lineCount.textContent = currentLanguage === "en" ? `${count} ${count === 1 ? "line" : "lines"}` : `${count} 行`;
   lineNumbers.scrollTop = codeInput.scrollTop;
 }
 
@@ -317,7 +390,7 @@ treeStage.addEventListener("click", (event) => {
   const item = button.closest("li");
   const collapsed = item.classList.toggle("collapsed");
   button.setAttribute("aria-expanded", String(!collapsed));
-  button.setAttribute("aria-label", `${collapsed ? "展開" : "收合"} ${button.querySelector(".node-name").textContent}`);
+  button.setAttribute("aria-label", `${translate(collapsed ? "expand" : "collapse")} ${button.querySelector(".node-name").textContent}`);
   button.querySelector(".toggle").textContent = collapsed ? "+" : "−";
 });
 
@@ -332,6 +405,38 @@ nameOnlyToggle.addEventListener("change", () => {
 });
 treeColorInput.addEventListener("input", () => applyTreeColor(treeColorInput.value));
 
+function setLanguage(language, persist = true) {
+  currentLanguage = TRANSLATIONS[language] ? language : "en";
+  document.documentElement.lang = currentLanguage;
+  document.querySelectorAll("[data-i18n]").forEach((element) => {
+    element.textContent = translate(element.dataset.i18n);
+  });
+  document.querySelectorAll("[data-i18n-html]").forEach((element) => {
+    element.innerHTML = translate(element.dataset.i18nHtml);
+  });
+  document.querySelectorAll("[data-i18n-aria]").forEach((element) => {
+    element.setAttribute("aria-label", translate(element.dataset.i18nAria));
+  });
+  document.querySelectorAll("[data-i18n-title]").forEach((element) => {
+    element.setAttribute("title", translate(element.dataset.i18nTitle));
+  });
+  document.querySelectorAll("[data-i18n-alt]").forEach((element) => {
+    element.setAttribute("alt", translate(element.dataset.i18nAlt));
+  });
+  document.querySelectorAll("[data-language]").forEach((button) => {
+    button.setAttribute("aria-pressed", String(button.dataset.language === currentLanguage));
+  });
+  updateEditorMeta();
+  renderTree();
+  if (persist) {
+    try { localStorage.setItem("swiftui-hierarchy-language", currentLanguage); } catch { /* Storage may be unavailable. */ }
+  }
+}
+
+document.querySelectorAll("[data-language]").forEach((button) => {
+  button.addEventListener("click", () => setLanguage(button.dataset.language));
+});
+
 try {
   const savedTreeColor = localStorage.getItem("swiftui-hierarchy-color");
   if (/^#[0-9a-f]{6}$/i.test(savedTreeColor || "")) treeColorInput.value = savedTreeColor;
@@ -339,5 +444,6 @@ try {
 applyTreeColor(treeColorInput.value, false);
 
 codeInput.value = EXAMPLE_CODE;
-updateEditorMeta();
-renderTree();
+let savedLanguage = "en";
+try { savedLanguage = localStorage.getItem("swiftui-hierarchy-language") || savedLanguage; } catch { /* Use English. */ }
+setLanguage(savedLanguage, false);
