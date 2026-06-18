@@ -324,7 +324,7 @@ function renderNode(node) {
   const hasChildren = node.children.length > 0;
   const detailText = node.kind === "type" ? translate("viewType") : node.kind === "component" ? translate("customView") : node.detail;
   const detail = detailText ? `<span class="node-detail">${escapeHTML(detailText)}</span>` : "";
-  const children = hasChildren ? `<ul>${node.children.map(renderNode).join("")}</ul>` : "";
+  const children = hasChildren ? `<div class="children-branch" aria-hidden="false"><ul>${node.children.map(renderNode).join("")}</ul></div>` : "";
   return `<li data-node-id="${node.id}">
     <div class="node-row">
       <button class="view-node ${hasChildren ? "has-children" : ""} ${node.kind === "type" ? "type-node" : ""} ${node.kind === "component" ? "component-node" : ""}" type="button" ${hasChildren ? `aria-expanded="true" aria-label="${translate("collapse")} ${escapeHTML(node.name)}"` : "disabled"}>
@@ -389,6 +389,9 @@ treeStage.addEventListener("click", (event) => {
   if (!button) return;
   const item = button.closest("li");
   const collapsed = item.classList.toggle("collapsed");
+  const childrenBranch = item.querySelector(":scope > .children-branch");
+  childrenBranch.inert = collapsed;
+  childrenBranch.setAttribute("aria-hidden", String(collapsed));
   button.setAttribute("aria-expanded", String(!collapsed));
   button.setAttribute("aria-label", `${translate(collapsed ? "expand" : "collapse")} ${button.querySelector(".node-name").textContent}`);
   button.querySelector(".toggle").textContent = collapsed ? "+" : "−";

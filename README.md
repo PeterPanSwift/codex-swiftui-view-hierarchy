@@ -25,5 +25,6 @@ python3 -m http.server 4173
 - 支援繁體中文與英文介面切換，並保存語言偏好
 - 預設使用英文介面並開啟 Names only 模式
 - 預設使用 Swift orange（`#F05138`）主題色
+- 展開與收合子階層時使用平滑動畫
 - 支援整份 `struct ...: View` 或單獨的 View builder 片段
 - `⌘ Enter` / `Ctrl Enter` 快速生成
